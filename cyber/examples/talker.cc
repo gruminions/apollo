@@ -34,23 +34,45 @@ int main(int argc, char *argv[]) {
   // create talker
   auto talker = talker_node->CreateWriter<RawMessage>("channel/chatter");
 
-  Rate rate(10.0);
-  const std::string foo_content(307200, '+');  // 307200 = 480 * 640
+  int msg_len = 1000;
+  if (argc > 1) {
+    msg_len = atoi(argv[1]);
+  }
+
+  int msg_num = 1000;
+  if (argc > 2) {
+    msg_num = atoi(argv[2]);
+  }
+
+  double freq = 100.0;
+  if (argc > 3) {
+    freq = atof(argv[3]);
+  }
+
+  std::cout << "message length: " << msg_len << "\n"
+            << "message number: " << msg_num << "\n"
+            << "message frequency: " << freq << std::endl;
+
+  Rate rate(freq);
+  const std::string foo_content(msg_len, 'c');
   int count = 0;
+
+  std::this_thread::sleep_for(
+      std::chrono::seconds(2));  // sleep for mutual discovery
 
   while (apollo::cyber::OK()) {
     auto msg = std::make_shared<RawMessage>();
     msg->message = foo_content;
 
     std::stringstream ss;
-    ss << Time::Now().ToNanosecond();
+    ss << '+' << Time::Now().ToNanosecond();
     msg->message.append(ss.str());
 
     talker->Write(msg);
     rate.Sleep();
 
     ++count;
-    if (count == 10000) {
+    if (count == msg_num) {
       std::cout << "talk over" << std::endl;
       break;
     }

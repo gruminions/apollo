@@ -25,7 +25,8 @@ uint64_t total_latency = 0;
 
 void MessageCallback(const std::shared_ptr<RawMessage>& msg) {
   uint64_t now = Time::Now().ToNanosecond();
-  std::string ts(msg->message, 307200);
+  auto idx = msg->message.find_last_of('+');
+  std::string ts(msg->message, idx + 1);
   total_latency += now - std::stoul(ts);
   ++count;
 }
