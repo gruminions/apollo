@@ -15,12 +15,19 @@
  *****************************************************************************/
 
 #include "cyber/cyber.h"
-#include "cyber/examples/proto/examples.pb.h"
+#include "cyber/message/raw_message.h"
 
-void MessageCallback(
-    const std::shared_ptr<apollo::cyber::examples::proto::Chatter>& msg) {
-  AINFO << "Received message seq-> " << msg->seq();
-  AINFO << "msgcontent->" << msg->content();
+using apollo::cyber::Time;
+using apollo::cyber::message::RawMessage;
+
+uint64_t count = 0;
+uint64_t total_latency = 0;
+
+void MessageCallback(const std::shared_ptr<RawMessage>& msg) {
+  uint64_t now = Time::Now().ToNanosecond();
+  std::string ts(msg->message, 307200);
+  total_latency += now - std::stoul(ts);
+  ++count;
 }
 
 int main(int argc, char* argv[]) {
@@ -29,9 +36,10 @@ int main(int argc, char* argv[]) {
   // create listener node
   auto listener_node = apollo::cyber::CreateNode("listener");
   // create listener
-  auto listener =
-      listener_node->CreateReader<apollo::cyber::examples::proto::Chatter>(
-          "channel/chatter", MessageCallback);
+  auto listener = listener_node->CreateReader<RawMessage>("channel/chatter",
+                                                          MessageCallback);
   apollo::cyber::WaitForShutdown();
+  std::cout << "count: " << count
+            << " avg_latency_us: " << total_latency / count / 1000 << std::endl;
   return 0;
 }

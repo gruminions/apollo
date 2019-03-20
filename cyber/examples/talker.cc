@@ -14,14 +14,17 @@
  * limitations under the License.
  *****************************************************************************/
 
+#include <iostream>
+#include <sstream>
+
 #include "cyber/cyber.h"
-#include "cyber/examples/proto/examples.pb.h"
+#include "cyber/message/raw_message.h"
 #include "cyber/time/rate.h"
 #include "cyber/time/time.h"
 
 using apollo::cyber::Rate;
 using apollo::cyber::Time;
-using apollo::cyber::examples::proto::Chatter;
+using apollo::cyber::message::RawMessage;
 
 int main(int argc, char *argv[]) {
   // init cyber framework
@@ -29,18 +32,29 @@ int main(int argc, char *argv[]) {
   // create talker node
   auto talker_node = apollo::cyber::CreateNode("talker");
   // create talker
-  auto talker = talker_node->CreateWriter<Chatter>("channel/chatter");
-  Rate rate(1.0);
+  auto talker = talker_node->CreateWriter<RawMessage>("channel/chatter");
+
+  Rate rate(10.0);
+  const std::string foo_content(307200, '+');  // 307200 = 480 * 640
+  int count = 0;
+
   while (apollo::cyber::OK()) {
-    static uint64_t seq = 0;
-    auto msg = std::make_shared<Chatter>();
-    msg->set_timestamp(Time::Now().ToNanosecond());
-    msg->set_lidar_timestamp(Time::Now().ToNanosecond());
-    msg->set_seq(seq++);
-    msg->set_content("Hello, apollo!");
+    auto msg = std::make_shared<RawMessage>();
+    msg->message = foo_content;
+
+    std::stringstream ss;
+    ss << Time::Now().ToNanosecond();
+    msg->message.append(ss.str());
+
     talker->Write(msg);
-    AINFO << "talker sent a message!";
     rate.Sleep();
+
+    ++count;
+    if (count == 10000) {
+      std::cout << "talk over" << std::endl;
+      break;
+    }
   }
+
   return 0;
 }
