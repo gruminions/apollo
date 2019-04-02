@@ -3,6 +3,14 @@ load("//tools:cpplint.bzl", "cpplint")
 package(default_visibility = ["//visibility:public"])
 
 cc_binary(
+    name = "cyber_node",
+    srcs = ["cyber_node.cc"],
+    deps = [
+        "//cyber",
+    ],
+)
+
+cc_binary(
     name = "talker",
     srcs = ["talker.cc"],
     deps = [
